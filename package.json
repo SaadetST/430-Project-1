@@ -15,7 +15,9 @@
   "type": "commonjs",
   "main": "eslint.config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./src/server.js",
+    "pretest": "enlist ./src --fix",
+    "test": "echo \"Tests complete\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

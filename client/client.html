@@ -5,7 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+<script>
+
+</script>
 <body>
-    
+    <h3>To test the api try:</h3>
+    <ul>
+        <li>'/' defaults to getIndex</li>
+        <li>'/title' gets all the top titles</li>
+        <li>'/artists' gets all top artists </li>
+        <li>'/links' gets all top years </li>
+        <li>'/searchTitle?title=Alejandro' looks for that specific title and returns the object.</li>
+        <li>'/searchTitle' This tests the 400 error.</li>
+        <li>'/addSong' adds a song based on user input. Run below commands to terminal to get all returns.</li>
+        <ul>
+            <li>edits existing: curl -i -X POST -d "title=Alejandro&artist=Lady+Gaaaa" http://localhost:3000/addSong</li>
+            <li>check: curl -i "http://localhost:3000/searchTitle?title=Alejandro"</li>
+            <li>adds new: curl -i -X POST -d "title=Test&artist=MEE" http://localhost:3000/addSong</li>
+            <li>check: curl -i "http://localhost:3000/searchTitle?title=Test"</li>
+        </ul>
+        <li>random link will default to 404</li>
+    </ul>
 </body>
 </html>

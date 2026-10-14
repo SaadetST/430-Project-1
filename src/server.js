@@ -2,7 +2,6 @@ const http = require('http');
 const fs = require('fs');
 const query = require('querystring');
 const { songs, buildLink } = require('./dataStore.js');
-//console.log(songs[0]); //undefined
 
 const index = fs.readFileSync(`${__dirname}/../client/client.html`);
 const css = fs.readFileSync(`${__dirname}/../client/style.css`);
@@ -10,6 +9,7 @@ const docs = fs.readFileSync(`${__dirname}/../client/docs.html`);
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
+// optional fields of Search endpoint
 const optionalFields = {
   year: (s) => s.year,
   genre: (s) => s['top genre'],
@@ -33,10 +33,9 @@ const respond = (request, response, status, type, content) => {
     response.end();
 };
 
+// finds specific song via the title
 const getSong = (request, response, params) => {
     const wantedTitle = params.get('title');
-    //console.log(params);
-    //console.log(wantedTitle);
 
     if (!wantedTitle) {
         return respond(request, response, 400, 'application/json', {
@@ -45,8 +44,8 @@ const getSong = (request, response, params) => {
         });
     }
 
+    // Finds song match and saves it int result
     const match = songs.find((s) => String(s.title).toUpperCase() === wantedTitle.toUpperCase());
-    //console.log(match);
     
     if(!match){
         return respond(request, response, 404, 'application/json', {
@@ -60,8 +59,7 @@ const getSong = (request, response, params) => {
         artist: match.artist 
     };
     
-    //console.log(result);
-    
+    // Checks the optional parameters
     const checkedParams = params.getAll('show');
 
     for (let i = 0; i < checkedParams.length; i++) {
@@ -72,8 +70,6 @@ const getSong = (request, response, params) => {
         }
     }
 
-    //console.log(result);
-
     return respond(request, response, 200, 'application/json', result);
 }
 
@@ -81,6 +77,8 @@ const getIndex = (request, response) => {
     respond(request,response, 200, 'text/html', index);
 };
 
+// The three big gets, 
+// all of that type of data is pulled and filtered to make sure no repetitions occur
 const getTitles = (request, response) => {
     const allTitles = sendUnique((song) => song.title);
     respond(request,response, 200, 'application/json', allTitles);
@@ -96,6 +94,7 @@ const getGenres = (request, response) => {
     respond(request,response, 200, 'application/json', allYears);
 };
 
+// Two posts
 const addSong = (request, response) => saveSong(request, response, false);
 
 const editSong = (request, response) => saveSong(request, response, true);
@@ -108,6 +107,9 @@ const notFound = (request, response) => {
     respond(request, response, 404, 'application/json', body);
 };
 
+// Function for the post requests
+// Gets the data, adds a new object to json for addSong
+// Gets the data, updates exsiting object for editSong
 const saveSong = (request, response, isEdit) => {
     const body = [];    
     request.on('data', (chunk) => {
@@ -120,6 +122,7 @@ const saveSong = (request, response, isEdit) => {
 
         const { title, artist, year, genre, duration } = bodyParams;
 
+        // endpoint requirements and error handlers
         if (!title) {
           return respond(request, response, 400, 'application/json', {
             message: 'Song title required.',
@@ -136,6 +139,7 @@ const saveSong = (request, response, isEdit) => {
 
         const match = songs.find((s) => String(s.title).toUpperCase() === title.toUpperCase());
 
+        // if isEditing is true, save the previous value when null
         if (match) {
             if (!isEdit || artist){
                 match.artist = artist;
@@ -150,6 +154,7 @@ const saveSong = (request, response, isEdit) => {
             return response.end();
         }
 
+        // If there are no matches, editSong ends here
         if (isEdit) {
             return respond(request, response, 404, 'application/json', {
                 message: 'Song not found.',
@@ -157,6 +162,7 @@ const saveSong = (request, response, isEdit) => {
             });
         }
 
+        // new song obj w/ link
         const newSong = {
             title, 
             artist,
@@ -164,12 +170,27 @@ const saveSong = (request, response, isEdit) => {
             'top genre': genre,
             audio: { dur: Number(duration) || 0 },
         };
-
         newSong.link = buildLink(newSong);
 
         songs.push(newSong);
         return respond(request, response, 201, 'application/json', newSong);
     });
+};
+
+// three big GETS helper function
+//  sort out data to make sure each is unique
+const sendUnique = (getValue) => {
+  const unique = [];
+
+  for (let i = 0; i < songs.length; i++) {
+    const value = getValue(songs[i]);
+
+    if (!unique.includes(value)) {
+      unique.push(value);
+    }
+  }
+
+  return unique;
 };
 
 const onRequest = (request,response) => {
@@ -188,6 +209,7 @@ const onRequest = (request,response) => {
         return notFound(request, response);
     }
 
+    // handles GET
     switch (path) {
         case '/':
           return getIndex(request, response);
@@ -206,20 +228,6 @@ const onRequest = (request,response) => {
         default:
             return notFound(request,response);
     }
-};
-
-const sendUnique = (getValue) => {
-  const unique = [];
-
-  for (let i = 0; i < songs.length; i++) {
-    const value = getValue(songs[i]);
-
-    if (!unique.includes(value)) {
-      unique.push(value);
-    }
-  }
-
-  return unique;
 };
 
 http.createServer(onRequest).listen(port, () => {

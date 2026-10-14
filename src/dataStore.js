@@ -19,7 +19,7 @@ const songs = rawSong.map((song) => ({
 const titles = (song) => song.title;
 const artists = (song) => song.artist;
 const links = (song) => song.link;
-const years = (song) => song.year;
+const genres = (song) => song['top genre'];
 
 //console.log(buildLink(songs[0]));
 //console.log(songs[0]);
@@ -29,5 +29,6 @@ module.exports = {
     titles,
     artists,
     links,
-    years,
+    genres,
+    buildLink
 };

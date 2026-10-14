@@ -4,27 +4,346 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <script>
+  const handleResponse = (response, parseResponse) => {
+    const content = document.querySelector('#content');
 
+    // message for each status code
+    switch (response.status) {
+      case 200:
+        content.innerHTML = '<b>Status:</b> Success';
+        break;
+      case 201:
+        content.innerHTML = '<b>Status: </b>Created';
+        break;
+      case 204:
+        content.innerHTML = '<b>Status: </b>Updated';
+        break;
+      case 400:
+        content.innerHTML = '<b>Status: </b>Bad Request';
+        break;
+      case 404:
+        content.innerHTML = '<b>Status: </b>Not Found';
+        break;
+      default:
+        content.innerHTML = '<b>Error code not implemented by client.</b>';
+        break;
+    }
+
+    console.log('Status: ' + response.status);
+    
+    const type = response.headers.get('Content-Type');
+    console.log('Type: ' + type);
+
+    const length = response.headers.get('Content-Length');
+    console.log('Length: ' + length);
+
+    if (parseResponse) {
+      response.json().then((obj) => {
+        
+        let text;
+        if (obj.message) {
+          text = `Message: ${obj.message}`;
+        } else if (Array.isArray(obj)) {
+          text = '';
+        } else {
+          text = '';
+        }
+        
+        content.append(text);
+
+            // added: one list item per value (titles, artists, genres)
+        if (Array.isArray(obj)) {
+          const list = document.createElement('ul');
+          list.className = 'resultList';
+        
+          for (let i = 0; i < obj.length; i++) {
+            const item = document.createElement('li');
+            item.textContent = obj[i];
+            list.appendChild(item);
+          }
+        
+          content.appendChild(list);
+        }
+
+        // one list item per field of a song
+        if (!obj.message && !Array.isArray(obj)) {
+          const list = document.createElement('ul');
+          const keys = Object.keys(obj);
+        
+          for (let i = 0; i < keys.length; i++) {
+            const item = document.createElement('li');
+            
+            if (keys[i] === 'audio') {
+              item.textContent = `duration: ${obj.audio.dur}`;
+            } else {
+              item.textContent = `${keys[i]}: ${obj[keys[i]]}`;
+            }
+
+            list.appendChild(item);
+          }
+        
+          content.appendChild(list);
+        }
+      });
+    } 
+  }
+  
+  const getList = async (url) => {
+    fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }).then((response) => {
+      handleResponse(response, true, content);
+    });
+  };
+
+  const searchSong = async () => {
+    const checkedBoxes = document.querySelectorAll('input[name="show"]:checked');
+    const params = new URLSearchParams({
+      title: document.querySelector('#searchField').value,
+    });
+
+    if(checkedBoxes)
+    {
+      for (let i = 0; i < checkedBoxes.length; i++) {
+        params.append('show', checkedBoxes[i].value);
+      }
+    }
+
+    fetch(`/searchTitle?${params}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    }).then((response) => {
+      handleResponse(response, true, content);
+    });
+
+    document.querySelector('#searchField').value = '';
+
+    const boxes = document.querySelectorAll('input[name="show"]');
+
+    for (let i = 0; i < boxes.length; i++) {
+      boxes[i].checked = false;
+    }
+  };
+
+  const addSong = async (form) => {
+
+    const action = form.getAttribute('action');
+    const method = form.getAttribute('method');
+    
+    const title = document.querySelector('#titleField').value;
+    const artist = document.querySelector('#artistField').value;
+    const year = document.querySelector('#yearField').value;
+    const genre = document.querySelector('#genreField').value;
+    const duration = document.querySelector('#durationField').value;
+
+    const content = document.querySelector('#addResult');
+
+    const formData = `title=${encodeURIComponent(title)}`
+    + `&artist=${encodeURIComponent(artist)}`
+    + `&year=${year}`
+    + `&genre=${encodeURIComponent(genre)}`
+    + `&duration=${duration}`;
+
+    fetch(action, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: new URLSearchParams(new FormData(form)).toString(),
+    }).then((response) => {
+      if (response.status === 204) {
+        handleResponse(response, false, content);
+      } else {
+        handleResponse(response, true, content);
+      }
+    });
+  }
+
+  const editSong = (form) => {
+    
+    const action = form.getAttribute('action');
+    const method = form.getAttribute('method');
+    
+    const title = document.querySelector('#editTitleField').value;
+    const artist = document.querySelector('#editArtistField').value;
+    const year = document.querySelector('#editYearField').value;
+    const genre = document.querySelector('#editGenreField').value;
+    const content = document.querySelector('#editResult');
+
+    const formData = `title=${encodeURIComponent(title)}`
+    + `&artist=${artist}`
+    + `&year=${year}`
+    + `&genre=${encodeURIComponent(genre)}`;
+
+    fetch(action, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: formData,
+    }).then((response) => {
+      if (response.status === 204) {
+        handleResponse(response, false, content);
+      } else {
+        handleResponse(response, true, content);
+      }
+    });
+  };
+
+  const init = () => {
+    const songForm = document.querySelector('#songForm');
+    const editForm = document.querySelector('#editForm');
+    
+    document.querySelector('#titlesBtn').addEventListener('click', () => {
+      getList('/titles', document.querySelector('#titleRes'));
+    });
+    document.querySelector('#artistsBtn').addEventListener('click', () => {
+      getList('/artists', document.querySelector('#artistRes'));
+    });
+    document.querySelector('#genresBtn').addEventListener('click', () => {
+      getList('/genres', document.querySelector('#genreRes'));
+    });
+    document.querySelector('#searchBtn').addEventListener('click', searchSong);
+
+    songForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      addSong(songForm);
+      songForm.reset();
+    });
+    editForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      editSong(editForm);
+      editForm.reset();
+    });
+  };
+
+  window.onload = init;
 </script>
 <body>
-    <h3>To test the api try:</h3>
-    <ul>
-        <li>'/' defaults to getIndex</li>
-        <li>'/title' gets all the top titles</li>
-        <li>'/artists' gets all top artists </li>
-        <li>'/links' gets all top years </li>
-        <li>'/searchTitle?title=Alejandro' looks for that specific title and returns the object.</li>
-        <li>'/searchTitle' This tests the 400 error.</li>
-        <li>'/addSong' adds a song based on user input. Run below commands to terminal to get all returns.</li>
+  <h1>Top 2010s Song Library</h1>
+  <a href="/docs.html">Documentation</a>
+
+
+  <div class="first">
+    <section class="getResult">
+      <div id="searchTitle">
+        <h2>Search by title</h2>
+        <label for="searchField">Title: </label>
+        <input id="searchField" type="text" name="title" />
+        
+        <p>Also show:</p>
         <ul>
-            <li>edits existing: curl -i -X POST -d "title=Alejandro&artist=Lady+Gaaaa" http://localhost:3000/addSong</li>
-            <li>check: curl -i "http://localhost:3000/searchTitle?title=Alejandro"</li>
-            <li>adds new: curl -i -X POST -d "title=Test&artist=MEE" http://localhost:3000/addSong</li>
-            <li>check: curl -i "http://localhost:3000/searchTitle?title=Test"</li>
+          <li><label><input type="checkbox" name="show" value="year"/> Year</label></li>
+          <li><label><input type="checkbox" name="show" value="genre"/> Genre</label></li>
+          <li><label><input type="checkbox" name="show" value="duration"/> Length</label></li>
+          <li><label><input type="checkbox" name="show" value="link"/> Link</label></li>
         </ul>
-        <li>random link will default to 404</li>
+        
+        <button id="searchBtn" type="button">Search</button>
+      </div>
+    </section>
+    
+    <div class="lists">
+      <h2>Top Lists</h2>
+      <section class="getResult">
+        <div id="getTitles">
+          <p>All Top Titles</p>
+          <button id="titlesBtn" type="button">Go</button>
+        </div>
+      </section>
+      
+      <section class="getResult">
+        <div id="getArtists">
+          <p>All Top Artists</p>
+          <button id="artistsBtn" type="button">Go</button>
+        </div>
+      </section>
+      
+      <section class="getResult">
+        <div id="getGenres">
+          <p>All Top Genres</p>
+          <button id="genresBtn" type="button">Go</button>
+        </div>
+      </section>
+    </div>
+    
+    <div class="forms">
+      <section>
+        <h2>Add a song</h2>
+        <form id="songForm" action="/addSong" method="post">
+          <label for="titleField">Title: </label>
+          <input id="titleField" type="text" name="title" />
+          
+          <label for="artistField">Artist: </label>
+          <input id="artistField" type="text" name="artist" />
+          
+          <label for="yearField">Year: </label>
+          <input id="yearField" type="number" name="year" min="2010" max="2019" />
+          
+          <label for="genreField">Genre: </label>
+          <input id="genreField" type="text" name="genre" />
+          
+          <label for="durationField">Length: </label>
+          <input id="durationField" type="number" name="duration" />
+          
+          <button type="submit">Add song</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Edit a song</h2>
+        <form id="editForm" action="/editSong" method="post">
+          <label for="editTitleField">Title of song to edit: </label>
+          <input id="editTitleField" type="text" name="title" />
+
+          <label for="editArtistField">Update artist: </label>
+          <input id="editArtistField" type="text" name="artist" />
+
+          <label for="editYearField">Update year: </label>
+          <input id="editYearField" type="number" name="year" min="2010" max="2019" />
+
+          <label for="editGenreField">Update genre: </label>
+          <input id="editGenreField" type="text" name="genre" />
+
+          <button type="submit">Edit song</button>
+        </form>
+      </section>  
+    </div>
+  </div>
+
+  <section>
+    <h2>Results</h2>
+    <p id="content"></p>
+  </section>
+
+
+  <!--
+  <button id="test">Test me</button>
+  <p id="content"></p>
+  <h3>To test the api try:</h3>
+  <ul>
+    <li>'/' defaults to getIndex</li>
+    <li>'/titles' gets all the top titles</li>
+    <li>'/artists' gets all top artists </li>
+    <li>'/links' gets all top years </li>
+    <li>'/searchTitle?title=Alejandro' looks for that specific title and returns the object.</li>
+    <li>'/searchTitle' This tests the 400 error.</li>
+    <li>'/addSong' adds a song based on user input. Run below commands to terminal to get all returns.</li>
+    <ul>
+      <li>edits existing: curl -i -X POST -d "title=Alejandro&artist=Lady+Gaaaa" http://localhost:3000/addSong</li>
+      <li>check: curl -i "http://localhost:3000/searchTitle?title=Alejandro"</li>
+      <li>adds new: curl -i -X POST -d "title=Test&artist=MEE" http://localhost:3000/addSong</li>
+      <li>check: curl -i "http://localhost:3000/searchTitle?title=Test"</li>
     </ul>
+    <li>random link will default to 404</li>
+  </ul>
+  -->
 </body>
 </html>

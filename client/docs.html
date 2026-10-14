@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <h1>Documentation Page</h1>
+
+    <h2>Titles</h2>
+    <p><b>GET /titles</b>,
+         supports both GET and HEAD requests.</p>
+    <p>Query params: None</p>
+    <p>Body params: None</p>
+    <p>Returns: 200 with a JSON array of strings of all song titles listed within the dataset.</p>
+    <p>Example: /titles returns ["Hey, Soul Sister", "Love The Way You Lie", "TiK ToK", ...]</p>
+
+    <h2>Artists</h2>
+    <p><b>GET /artists</b>,
+         supports both GET and HEAD requests.</p>
+    <p>Query params: None</p>
+    <p>Body params: None</p>
+    <p>Returns: 200 with a JSON array of strings of all artists listed within the dataset.</p>
+    <p>Example: /artists returns ["Train", "Eminem", "Katy Perry", ...]</p>
+
+    <h2>Genres</h2>
+    <p><b>GET /genres</b>,
+         supports both GET and HEAD requests.</p>
+    <p>Query params: None</p>
+    <p>Body params: None</p>
+    <p>Returns: 200 with a JSON array of strings of all genres listed within the dataset.</p>
+    <p>Example: /genres returns ["neo mellow", "detroit hip hop", "dance pop", ...]</p>
+
+    <h2>Search</h2>
+    <p><b>GET /searchTitle</b>,
+         supports both GET and HEAD requests.</p>    
+    <p>Query params: title (string, required), the full song title to look up, which is not case-sensitive. 
+        Show (string, optional), an extra field to include. It can be repeated and accepts year, genre, duration or link.</p>
+    <p>Body params: None</p>
+    <p>Returns: 200 with one JSON object that always contains title and artist, 
+        plus any fields requested with show. A 400 if title is missing. A 404 if no song matches.</p>
+    <p>Example: /searchTitle?title=Memories&show=genre returns { "title": "Memories", "artist": "Maroon 5", "genre": "pop" }</p>
+
+    <h2>Adding</h2>
+    <p><b>POST /addSong</b>,
+         supports POST requests.</p>
+    <p>Query params: None</p>
+    <p>Body params: Accepts in either application/x-www-form-urlencoded or application/json format. 
+        Accepts title (string, required), artist (string, required), year (number, optional), 
+        genre (string, optional) and duration (number of seconds, optional). Links generate automatically.</p>
+    <p>Returns: A 201 with a new song as a JSON object. A 204 if a song with that title already exists, 
+        it updates it and returns with no body. A 400 if a required param is missing.</p>
+    <p>Example: Posting title=Test&artist=Me&year=2015 returns 201 with the new song object.</p>
+    
+    <h2>Editing</h2>
+    <p><b>POST /editSong</b>,
+         supports POST requests.</p>
+    <p>Query params: None</p>
+    <p>Body params: Accepts in either application/x-www-form-urlencoded or application/json format. 
+        Accepts title (string, required), artist (string, optional), year (number, optional), 
+        genre (string, optional) and duration (number of seconds, optional). Any optional param 
+        that is left out or empty keeps its previous value.</p>
+    <p>Returns: A 204 status with no body on success. A 400 if title is missing. 
+        A 404 if no song has that title.</p>
+    <p>Example: Posting title=Memories&year=2010 returns 204.</p>
+</body>
+</html>

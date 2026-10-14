@@ -1,0 +1,58 @@
+body{
+    margin: 3rem;
+}
+
+h1{
+    display: flex;
+    justify-content: center;
+}
+
+h2 {
+    margin-top: 2rem;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+.first {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+.first > section,
+.lists,
+.forms > section {
+    flex: 1;
+    min-width: 0;
+}
+
+.forms {
+    display: contents;
+}
+
+.forms form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.forms form button {
+    margin-top: 8px;
+    align-self: flex-start;
+}
+
+.resultList {
+  column-count: 3;
+  column-gap: 24px;
+  list-style: none;
+  padding: 0;
+}
+
+.resultList li {
+  break-inside: avoid;
+  overflow-wrap: anywhere;
+  margin-bottom: 4px;
+}
